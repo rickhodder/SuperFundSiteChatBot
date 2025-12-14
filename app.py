@@ -73,6 +73,39 @@ st.markdown("""
         border: 2px solid #ff4b4b !important;
         box-shadow: 0 0 10px rgba(255,75,75,0.3);
     }
+    
+    /* Fixed size toolbar buttons for section controls */
+    /* Target buttons in narrow columns (the control buttons) */
+    div[data-testid="column"]:has(.stButton) {
+        display: flex;
+        align-items: flex-start;
+        justify-content: flex-end;
+        gap: 0px !important;
+    }
+    
+    /* Make section control buttons small and fixed size */
+    div[data-testid="column"] .stButton > button {
+        width: 32px !important;
+        height: 32px !important;
+        min-width: 32px !important;
+        min-height: 32px !important;
+        max-width: 32px !important;
+        max-height: 32px !important;
+        padding: 0px !important;
+        margin: 0px !important;
+        font-size: 16px !important;
+        line-height: 1 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: 4px !important;
+    }
+    
+    /* Remove default Streamlit button container margins */
+    div[data-testid="column"] .stButton {
+        margin: 0px !important;
+        padding: 0px !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -499,10 +532,14 @@ def main():
 
 def render_chat_section():
     """Render the chat interface section."""
-    st.markdown(f"### {create_section_header('Chat', '💬')}")
+    # Title on left, buttons on right
+    col_title, col_controls = st.columns([6, 2])
     
-    # Section controls
-    section_manager.render_section_controls("chat")
+    with col_title:
+        st.markdown(f"### {create_section_header('Chat', '💬')}")
+    
+    with col_controls:
+        section_manager.render_section_controls("chat")
     
     if not section_manager.is_collapsed("chat") and not section_manager.is_hidden("chat"):
         # Chat history display
@@ -593,10 +630,14 @@ def render_chat_section():
 
 def render_data_section():
     """Render the data grid section."""
-    st.markdown(f"### {create_section_header('Data Grid', '📊')}")
+    # Title on left, buttons on right
+    col_title, col_controls = st.columns([6, 2])
     
-    # Section controls
-    section_manager.render_section_controls("data_grid")
+    with col_title:
+        st.markdown(f"### {create_section_header('Data Grid', '📊')}")
+    
+    with col_controls:
+        section_manager.render_section_controls("data_grid")
     
     if not section_manager.is_collapsed("data_grid") and not section_manager.is_hidden("data_grid"):
         # Check what type of data to display
@@ -698,10 +739,14 @@ def render_data_section():
 
 def render_image_section():
     """Render the image/map section."""
-    st.markdown(f"### {create_section_header('Map View', '🗺️')}")
+    # Title on left, buttons on right
+    col_title, col_controls = st.columns([6, 2])
     
-    # Section controls
-    section_manager.render_section_controls("image")
+    with col_title:
+        st.markdown(f"### {create_section_header('Map View', '🗺️')}")
+    
+    with col_controls:
+        section_manager.render_section_controls("image")
     
     if not section_manager.is_collapsed("image") and not section_manager.is_hidden("image"):
         if st.session_state.current_score_result:
@@ -718,10 +763,14 @@ def render_image_section():
 
 def render_debug_section():
     """Render the debug section (collapsible by default)."""
-    st.markdown(f"### {create_section_header('Debug Info', '🔧')}")
+    # Title on left, buttons on right
+    col_title, col_controls = st.columns([6, 2])
     
-    # Section controls
-    section_manager.render_section_controls("debug")
+    with col_title:
+        st.markdown(f"### {create_section_header('Debug Info', '🔧')}")
+    
+    with col_controls:
+        section_manager.render_section_controls("debug")
     
     if not section_manager.is_collapsed("debug") and not section_manager.is_hidden("debug"):
         # Show debug log in a scrollable container

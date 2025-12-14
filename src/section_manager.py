@@ -118,27 +118,26 @@ class SectionManager:
         Args:
             section: Section name
         """
-        col1, col2, col3 = st.columns([1, 1, 1])
+        # Two column layout for inline display
+        col1, col2 = st.columns(2)
         
         with col1:
             if self.is_collapsed(section):
-                if st.button("▶ Expand", key=f"{section}_expand"):
+                if st.button("▶", key=f"{section}_expand", help="Expand"):
                     self.expand(section)
                     st.rerun()
             else:
-                if st.button("▼ Collapse", key=f"{section}_collapse"):
+                if st.button("▼", key=f"{section}_collapse", help="Collapse"):
                     self.collapse(section)
                     st.rerun()
         
         with col2:
             if not self.is_maximized(section):
-                if st.button("⛶ Maximize", key=f"{section}_maximize"):
+                if st.button("⛶", key=f"{section}_maximize", help="Maximize"):
                     self.maximize(section)
                     st.rerun()
-        
-        with col3:
-            if self.is_maximized(section):
-                if st.button("⊟ Minimize", key=f"{section}_minimize"):
+            else:
+                if st.button("⊟", key=f"{section}_minimize", help="Minimize"):
                     self.minimize(section)
                     st.rerun()
     
