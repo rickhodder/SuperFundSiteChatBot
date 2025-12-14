@@ -454,7 +454,41 @@ def render_chat_section():
     section_manager.render_section_controls("chat")
     
     if not section_manager.is_collapsed("chat") and not section_manager.is_hidden("chat"):
-        # Show available commands
+        # Chat history display
+        chat_container = st.container(height=400)
+        with chat_container:
+            for message in st.session_state.chat_history:
+                with st.chat_message(message["role"]):
+                    st.markdown(message["content"])
+        
+        # Check for pending command from button click
+        if st.session_state.pending_command:
+            user_input = st.session_state.pending_command
+            st.session_state.pending_command = None  # Clear it
+            
+            # Add user message
+            st.session_state.chat_history.append({
+                "role": "user",
+                "content": user_input
+            })
+            
+            # Process query
+            process_chat_query(user_input)
+        
+        # Chat input
+        user_input = st.chat_input("Enter an address or policy command (e.g., 'show all policies')...")
+        
+        if user_input:
+            # Add user message
+            st.session_state.chat_history.append({
+                "role": "user",
+                "content": user_input
+            })
+            
+            # Process query
+            process_chat_query(user_input)
+        
+        # Show available commands below input
         with st.expander("💡 Available Commands", expanded=False):
             st.markdown("**Click any command to run it:**")
             
@@ -504,40 +538,6 @@ def render_chat_section():
                 if st.button("🗺️ Policies in CA", key="cmd_state_ca", use_container_width=True):
                     st.session_state.pending_command = "policies in CA"
                     st.rerun()
-        
-        # Chat history display
-        chat_container = st.container(height=400)
-        with chat_container:
-            for message in st.session_state.chat_history:
-                with st.chat_message(message["role"]):
-                    st.markdown(message["content"])
-        
-        # Check for pending command from button click
-        if st.session_state.pending_command:
-            user_input = st.session_state.pending_command
-            st.session_state.pending_command = None  # Clear it
-            
-            # Add user message
-            st.session_state.chat_history.append({
-                "role": "user",
-                "content": user_input
-            })
-            
-            # Process query
-            process_chat_query(user_input)
-        
-        # Chat input
-        user_input = st.chat_input("Enter an address or policy command (e.g., 'show all policies')...")
-        
-        if user_input:
-            # Add user message
-            st.session_state.chat_history.append({
-                "role": "user",
-                "content": user_input
-            })
-            
-            # Process query
-            process_chat_query(user_input)
 
 
 def render_data_section():
