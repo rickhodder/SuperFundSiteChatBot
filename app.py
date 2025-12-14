@@ -115,44 +115,68 @@ if 'data_display_type' not in st.session_state:
 if 'pending_command' not in st.session_state:
     st.session_state.pending_command = None
 
+if 'debug_log' not in st.session_state:
+    st.session_state.debug_log = []
+
+
+def add_debug_log(message: str):
+    """Add a message to the debug log with timestamp."""
+    from datetime import datetime
+    timestamp = datetime.now().strftime("%H:%M:%S")
+    st.session_state.debug_log.append(f"[{timestamp}] {message}")
+    # Keep only last 100 messages
+    if len(st.session_state.debug_log) > 100:
+        st.session_state.debug_log = st.session_state.debug_log[-100:]
+
 
 def process_chat_query(user_input: str):
     """Process user chat input - detect if it's a policy query or address."""
     from src.specifications import policies_in_state, policies_by_coverage_type, high_value_policies
     
+    add_debug_log(f"Processing command: {user_input}")
+    
     user_lower = user_input.lower()
     
     # Policy commands
     if any(cmd in user_lower for cmd in ['show all policies', 'list all policies', 'all policies']):
+        add_debug_log("Command type: Show all policies")
         handle_show_all_policies()
     
     elif 'policies in' in user_lower or 'show policies in' in user_lower:
         # Extract state (look for 2-letter state codes or state names)
         state = extract_state_from_query(user_input)
         if state:
+            add_debug_log(f"Command type: Policies by state ({state})")
             handle_policies_by_state(state)
         else:
+            add_debug_log("Error: Could not extract state from query")
             show_error("Could not identify state. Try: 'show policies in NY'")
     
     elif 'high risk policies' in user_lower or 'risky policies' in user_lower:
+        add_debug_log("Command type: High risk policies")
         handle_high_risk_policies()
     
     elif 'high value policies' in user_lower or 'expensive policies' in user_lower:
+        add_debug_log("Command type: High value policies")
         handle_high_value_policies()
     
     elif 'comprehensive policies' in user_lower or 'comprehensive coverage' in user_lower:
+        add_debug_log("Command type: Comprehensive coverage policies")
         handle_policies_by_coverage('Comprehensive')
     
     elif 'score all policies' in user_lower or 'batch score' in user_lower:
+        add_debug_log("Command type: Batch score all policies")
         handle_batch_score_policies()
     
     elif user_input.startswith('policy ') or user_input.upper().startswith('P-'):
         # Show specific policy
         policy_id = user_input.replace('policy ', '').replace('Policy ', '').strip()
+        add_debug_log(f"Command type: Show specific policy ({policy_id})")
         handle_show_policy(policy_id)
     
     else:
         # Default: treat as address for safety score
+        add_debug_log(f"Command type: Address safety check")
         handle_address_query(user_input)
 
 
@@ -203,8 +227,10 @@ def handle_show_all_policies():
         policies = backend.get_all_policies()
         
         if policies.empty:
+            add_debug_log("Result: No policies found in database")
             response = "❌ No policies found in database."
         else:
+            add_debug_log(f"Result: Found {len(policies)} policies, maximizing data grid")
             response = f"📋 **Found {len(policies)} policies**\n\nDisplaying in data grid below."
             st.session_state.current_policy_data = policies
             st.session_state.data_display_type = 'policies'
@@ -226,8 +252,10 @@ def handle_policies_by_state(state: str):
         policies = backend.query_policies(spec)
         
         if policies.empty:
+            add_debug_log(f"Result: No policies found in {state}")
             response = f"❌ No policies found in {state}."
         else:
+            add_debug_log(f"Result: Found {len(policies)} policies in {state}, maximizing data grid")
             response = f"📋 **Found {len(policies)} policies in {state}**\n\nDisplaying in data grid below."
             st.session_state.current_policy_data = policies
             st.session_state.data_display_type = 'policies'
@@ -246,14 +274,17 @@ def handle_high_risk_policies():
         results = scorer.batch_score_from_csv()
         
         if results.empty:
+            add_debug_log("Result: No policies found to score")
             response = "❌ No policies found to score."
         else:
             # Filter for high/critical risk
             high_risk = results[results['risk_level'].isin(['HIGH', 'CRITICAL'])]
             
             if high_risk.empty:
+                add_debug_log("Result: No high-risk policies found after scoring")
                 response = "✅ No high-risk policies found!"
             else:
+                add_debug_log(f"Result: Found {len(high_risk)} high-risk policies, maximizing data grid")
                 response = f"⚠️ **Found {len(high_risk)} high-risk policies**\n\nDisplaying in data grid below."
                 st.session_state.current_policy_data = high_risk
                 st.session_state.data_display_type = 'policies'
@@ -269,6 +300,26 @@ def handle_high_risk_policies():
 def handle_high_value_policies():
     """Show high-value policies ($1M+)."""
     from src.specifications import high_value_policies
+    
+    with st.spinner("Finding high-value policies..."):
+        spec = high_value_policies(min_value=1000000)
+        policies = backend.query_policies(spec)
+        
+        if policies.empty:
+            add_debug_log("Result: No high-value policies ($1M+) found")
+            response = "❌ No high-value policies ($1M+) found."
+        else:
+            add_debug_log(f"Result: Found {len(policies)} high-value policies ($1M+), maximizing data grid")
+            response = f"💰 **Found {len(policies)} high-value policies ($1M+)**\n\nDisplaying in data grid below."
+            st.session_state.current_policy_data = policies
+            st.session_state.data_display_type = 'policies'
+            section_manager.maximize("data_grid")
+        
+        st.session_state.chat_history.append({
+            "role": "assistant",
+            "content": response
+        })
+        st.rerun()
     
     with st.spinner("Finding high-value policies..."):
         spec = high_value_policies(min_value=1000000)
@@ -667,18 +718,32 @@ def render_image_section():
 
 def render_debug_section():
     """Render the debug section (collapsible by default)."""
-    if settings.DEBUG_MODE:
-        st.markdown(f"### {create_section_header('Debug Info', '🔧')}")
+    st.markdown(f"### {create_section_header('Debug Info', '🔧')}")
+    
+    # Section controls
+    section_manager.render_section_controls("debug")
+    
+    if not section_manager.is_collapsed("debug") and not section_manager.is_hidden("debug"):
+        # Show debug log in a scrollable container
+        st.markdown("**Command Log:**")
+        log_container = st.container(height=300)
+        with log_container:
+            if st.session_state.debug_log:
+                # Show most recent messages first
+                for log_entry in reversed(st.session_state.debug_log):
+                    st.text(log_entry)
+            else:
+                st.text("No commands executed yet.")
         
-        # Section controls
-        section_manager.render_section_controls("debug")
-        
-        if not section_manager.is_collapsed("debug") and not section_manager.is_hidden("debug"):
+        # Show system state
+        with st.expander("System State", expanded=False):
             st.json({
                 "backend": backend.__class__.__name__,
                 "chat_history_count": len(st.session_state.chat_history),
                 "score_result_available": st.session_state.current_score_result is not None,
-                "section_states": st.session_state.section_states
+                "section_states": st.session_state.section_states,
+                "data_display_type": st.session_state.data_display_type,
+                "debug_log_entries": len(st.session_state.debug_log)
             })
 
 
