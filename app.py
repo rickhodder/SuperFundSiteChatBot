@@ -112,6 +112,9 @@ if 'current_policy_data' not in st.session_state:
 if 'data_display_type' not in st.session_state:
     st.session_state.data_display_type = 'sites'  # 'sites' or 'policies'
 
+if 'pending_command' not in st.session_state:
+    st.session_state.pending_command = None
+
 
 def process_chat_query(user_input: str):
     """Process user chat input - detect if it's a policy query or address."""
@@ -205,7 +208,7 @@ def handle_show_all_policies():
             response = f"📋 **Found {len(policies)} policies**\n\nDisplaying in data grid below."
             st.session_state.current_policy_data = policies
             st.session_state.data_display_type = 'policies'
-            section_manager.activate_section("data_grid")
+            section_manager.maximize("data_grid")
         
         st.session_state.chat_history.append({
             "role": "assistant",
@@ -228,7 +231,7 @@ def handle_policies_by_state(state: str):
             response = f"📋 **Found {len(policies)} policies in {state}**\n\nDisplaying in data grid below."
             st.session_state.current_policy_data = policies
             st.session_state.data_display_type = 'policies'
-            section_manager.activate_section("data_grid")
+            section_manager.maximize("data_grid")
         
         st.session_state.chat_history.append({
             "role": "assistant",
@@ -254,7 +257,7 @@ def handle_high_risk_policies():
                 response = f"⚠️ **Found {len(high_risk)} high-risk policies**\n\nDisplaying in data grid below."
                 st.session_state.current_policy_data = high_risk
                 st.session_state.data_display_type = 'policies'
-                section_manager.activate_section("data_grid")
+                section_manager.maximize("data_grid")
         
         st.session_state.chat_history.append({
             "role": "assistant",
@@ -277,7 +280,7 @@ def handle_high_value_policies():
             response = f"💰 **Found {len(policies)} high-value policies ($1M+)**\n\nDisplaying in data grid below."
             st.session_state.current_policy_data = policies
             st.session_state.data_display_type = 'policies'
-            section_manager.activate_section("data_grid")
+            section_manager.maximize("data_grid")
         
         st.session_state.chat_history.append({
             "role": "assistant",
@@ -300,7 +303,7 @@ def handle_policies_by_coverage(coverage_type: str):
             response = f"📋 **Found {len(policies)} {coverage_type} policies**\n\nDisplaying in data grid below."
             st.session_state.current_policy_data = policies
             st.session_state.data_display_type = 'policies'
-            section_manager.activate_section("data_grid")
+            section_manager.maximize("data_grid")
         
         st.session_state.chat_history.append({
             "role": "assistant",
@@ -327,7 +330,7 @@ def handle_batch_score_policies():
             
             st.session_state.current_policy_data = results
             st.session_state.data_display_type = 'policies'
-            section_manager.activate_section("data_grid")
+            section_manager.maximize("data_grid")
         
         st.session_state.chat_history.append({
             "role": "assistant",
@@ -359,7 +362,7 @@ def handle_show_policy(policy_id: str):
             
             st.session_state.current_policy_data = policy
             st.session_state.data_display_type = 'policies'
-            section_manager.activate_section("data_grid")
+            section_manager.maximize("data_grid")
         
         st.session_state.chat_history.append({
             "role": "assistant",
@@ -385,10 +388,9 @@ def handle_address_query(address: str):
                 "content": response
             })
             
-            # Activate data grid if sites found
+            # Maximize data grid if sites found
             if score_result['site_count'] > 0:
-                section_manager.activate_section("data_grid")
-                section_manager.activate_section("image")
+                section_manager.maximize("data_grid")
             
             st.rerun()
         
@@ -453,20 +455,55 @@ def render_chat_section():
     
     if not section_manager.is_collapsed("chat") and not section_manager.is_hidden("chat"):
         # Show available commands
-        with st.expander("💡 Available Commands"):
-            st.markdown("""
-            **Address Queries:**
-            - `123 Main St, Brooklyn, NY` - Check safety score for address
+        with st.expander("💡 Available Commands", expanded=False):
+            st.markdown("**Click any command to run it:**")
             
-            **Policy Queries:**
-            - `show all policies` - Display all insurance policies
-            - `policies in NY` - Show policies in a specific state
-            - `high risk policies` - Find policies with high risk scores
-            - `high value policies` - Show policies worth $1M+
-            - `comprehensive policies` - Filter by coverage type
-            - `score all policies` - Batch score all policies
-            - `policy P-001` - Show specific policy details
-            """)
+            st.markdown("**🏢 Address Safety Queries:**")
+            col_addr1, col_addr2 = st.columns(2)
+            with col_addr1:
+                if st.button("📍 123 Main St, Brooklyn, NY", key="cmd_address1", use_container_width=True):
+                    st.session_state.pending_command = "123 Main St, Brooklyn, NY"
+                    st.rerun()
+                if st.button("📍 100 Canal St, New York, NY", key="cmd_address2", use_container_width=True):
+                    st.session_state.pending_command = "100 Canal St, New York, NY"
+                    st.rerun()
+            with col_addr2:
+                if st.button("📍 456 Oak Ave, Los Angeles, CA", key="cmd_address3", use_container_width=True):
+                    st.session_state.pending_command = "456 Oak Ave, Los Angeles, CA"
+                    st.rerun()
+                if st.button("📍 789 Elm Rd, Niagara Falls, NY", key="cmd_address4", use_container_width=True):
+                    st.session_state.pending_command = "789 Elm Rd, Niagara Falls, NY"
+                    st.rerun()
+            
+            st.markdown("---")
+            st.markdown("**📋 Policy Queries:**")
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("📋 Show all policies", key="cmd_all", use_container_width=True):
+                    st.session_state.pending_command = "show all policies"
+                    st.rerun()
+                if st.button("🗺️ Policies in NY", key="cmd_state", use_container_width=True):
+                    st.session_state.pending_command = "policies in NY"
+                    st.rerun()
+                if st.button("⚠️ High risk policies", key="cmd_risk", use_container_width=True):
+                    st.session_state.pending_command = "high risk policies"
+                    st.rerun()
+                if st.button("💰 High value policies", key="cmd_value", use_container_width=True):
+                    st.session_state.pending_command = "high value policies"
+                    st.rerun()
+            with col2:
+                if st.button("🛡️ Comprehensive policies", key="cmd_comp", use_container_width=True):
+                    st.session_state.pending_command = "comprehensive policies"
+                    st.rerun()
+                if st.button("🔢 Score all policies", key="cmd_score", use_container_width=True):
+                    st.session_state.pending_command = "score all policies"
+                    st.rerun()
+                if st.button("🔍 Policy P-001", key="cmd_specific", use_container_width=True):
+                    st.session_state.pending_command = "policy P-001"
+                    st.rerun()
+                if st.button("🗺️ Policies in CA", key="cmd_state_ca", use_container_width=True):
+                    st.session_state.pending_command = "policies in CA"
+                    st.rerun()
         
         # Chat history display
         chat_container = st.container(height=400)
@@ -474,6 +511,20 @@ def render_chat_section():
             for message in st.session_state.chat_history:
                 with st.chat_message(message["role"]):
                     st.markdown(message["content"])
+        
+        # Check for pending command from button click
+        if st.session_state.pending_command:
+            user_input = st.session_state.pending_command
+            st.session_state.pending_command = None  # Clear it
+            
+            # Add user message
+            st.session_state.chat_history.append({
+                "role": "user",
+                "content": user_input
+            })
+            
+            # Process query
+            process_chat_query(user_input)
         
         # Chat input
         user_input = st.chat_input("Enter an address or policy command (e.g., 'show all policies')...")
