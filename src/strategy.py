@@ -79,9 +79,7 @@ class CSVBackend(IDataBackend):
                 print(f"⚠ CSV file not found: {self.superfund_csv}")
                 # Return empty DataFrame with expected schema
                 self._superfund_data = pd.DataFrame(columns=[
-                    'site_name', 'address', 'city', 'state', 'zip_code',
-                    'latitude', 'longitude', 'status', 'construction_completion_date',
-                    'contaminants', 'description'
+                    "Id","SiteName","PollutionClass","PollutionType","RemediationStatus","RemediationStart","RemediationFinish","AddressLine","City","StateProvince","PostalCode","Country","Latitude","Longitude"
                 ])
         return self._superfund_data
     
@@ -95,8 +93,7 @@ class CSVBackend(IDataBackend):
                 print(f"⚠ Policy CSV file not found: {self.policy_csv}")
                 # Return empty DataFrame with expected schema
                 self._policy_data = pd.DataFrame(columns=[
-                    'policy_id', 'address', 'city', 'state', 'zip_code',
-                    'latitude', 'longitude', 'property_value', 'coverage_type'
+                    "Id","PolicyNumber","PolicyType","EffectiveDate","ExpirationDate","Status","EndorsementAmount","Address","City","State","PostalCode","Country","Latitude","Longitude"
                 ])
         return self._policy_data
     

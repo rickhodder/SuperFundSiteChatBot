@@ -431,23 +431,23 @@ def handle_batch_score_policies():
         st.rerun()
 
 
-def handle_show_policy(policy_id: str):
+def handle_show_policy(policy_number: str):
     """Show details for a specific policy."""
-    with st.spinner(f"Finding policy {policy_id}..."):
+    with st.spinner(f"Finding policy {policy_number}..."):
         policies = backend.get_all_policies()
-        policy = policies[policies['policy_id'].str.upper() == policy_id.upper()]
+        policy = policies[policies['PolicyNumber'].str.upper() == policy_number.upper()]
         
         if policy.empty:
-            response = f"❌ Policy {policy_id} not found."
+            response = f"❌ Policy {policy_number} not found."
         else:
             p = policy.iloc[0]
-            response = f"📋 **Policy {p['policy_id']}**\n\n"
-            response += f"- Address: {p['address']}, {p['city']}, {p['state']}\n"
-            response += f"- Property Value: ${p['property_value']:,.0f}\n"
-            response += f"- Coverage: {p['coverage_type']}\n\n"
+            response = f"📋 **Policy {p['PolicyNumber']}**\n\n"
+            response += f"- Address: {p['Address']}, {p['City']}, {p['State']}\n"
+#            response += f"- Property Value: ${p['property_value']:,.0f}\n"
+            response += f"- Policy Type: {p['PolicyType']}\n\n"
             
             # Score this policy
-            result = scorer.score_policy(latitude=p['latitude'], longitude=p['longitude'])
+            result = scorer.score_policy(latitude=p['Latitude'], longitude=p['Longitude'])
             response += f"🎯 Safety Score: {result['score']}/100\n"
             response += f"⚠️ Risk Level: {result['risk_level']}\n"
             response += f"🏭 Nearby Sites: {result['site_count']}"
@@ -592,11 +592,11 @@ def render_chat_section():
             st.markdown("**🏢 Address Safety Queries:**")
             col_addr1, col_addr2 = st.columns(2)
             with col_addr1:
-                if st.button("📍 123 Main St, Brooklyn, NY", key="cmd_address1", use_container_width=True):
-                    st.session_state.pending_command = "123 Main St, Brooklyn, NY"
+                if st.button("📍 5733 Main Street, Portland, ME 04101 (safe address, no sites)", key="cmd_address1", use_container_width=True):
+                    st.session_state.pending_command = "5733 Main Street, Portland, ME 04101"
                     st.rerun()
-                if st.button("📍 100 Canal St, New York, NY", key="cmd_address2", use_container_width=True):
-                    st.session_state.pending_command = "100 Canal St, New York, NY"
+                if st.button("📍 100 Main Street, Tucson, AZ 85701 (has at least 1 site)", key="cmd_address2", use_container_width=True):
+                    st.session_state.pending_command = "100 Main Street, Tucson, AZ 85701"
                     st.rerun()
             with col_addr2:
                 if st.button("📍 456 Oak Ave, Los Angeles, CA", key="cmd_address3", use_container_width=True):
@@ -629,8 +629,8 @@ def render_chat_section():
                 if st.button("🔢 Score all policies", key="cmd_score", use_container_width=True):
                     st.session_state.pending_command = "score all policies"
                     st.rerun()
-                if st.button("🔍 Policy P-001", key="cmd_specific", use_container_width=True):
-                    st.session_state.pending_command = "policy P-001"
+                if st.button("🔍 Policy UE56256340", key="cmd_specific", use_container_width=True):
+                    st.session_state.pending_command = "policy UE56256340"
                     st.rerun()
                 if st.button("🗺️ Policies in CA", key="cmd_state_ca", use_container_width=True):
                     st.session_state.pending_command = "policies in CA"
@@ -687,7 +687,8 @@ def render_data_section():
                 
                 with data_container:
                     # Select columns to display
-                    display_cols = ['policy_id', 'address', 'city', 'state']
+                    #display_cols = ['Id', 'Address', 'City', 'State']
+                    display_cols = ["Id","PolicyNumber","PolicyType","EffectiveDate","ExpirationDate","Status","EndorsementAmount","Address","City","State","PostalCode","Country","Latitude","Longitude"]
                     
                     # Add score columns if they exist
                     if 'score' in policy_data.columns:
@@ -739,7 +740,9 @@ def render_data_section():
                 
                 with data_container:
                     st.dataframe(
-                        nearby_sites[['site_name', 'city', 'state', 'status']],
+                        #nearby_sites[['site_name', 'city', 'state', 'status']],
+                        #"Id","SiteName","PollutionClass","PollutionType","RemediationStatus","RemediationStart","RemediationFinish","AddressLine","City","StateProvince","PostalCode","Country","Latitude","Longitude"
+                        nearby_sites[["Id","SiteName","PollutionClass","PollutionType","RemediationStatus","RemediationStart","RemediationFinish","AddressLine","City","StateProvince","PostalCode","Country","Latitude","Longitude"]],
                         use_container_width=True,
                         hide_index=True,
                         height=data_height - 20

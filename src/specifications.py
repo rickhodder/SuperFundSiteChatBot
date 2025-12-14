@@ -49,7 +49,7 @@ class GeospatialSpecification(ISpecification):
         
         def within_radius(row):
             try:
-                site_location = (row['latitude'], row['longitude'])
+                site_location = (row['Latitude'], row['Longitude'])
                 distance = geodesic(self.center, site_location).miles
                 return distance <= self.radius_miles
             except (KeyError, ValueError, TypeError):
@@ -71,10 +71,10 @@ class StatusSpecification(ISpecification):
     
     def is_satisfied_by(self, data: pd.DataFrame) -> pd.DataFrame:
         """Return sites matching status."""
-        if data.empty or 'status' not in data.columns:
+        if data.empty or 'RemediationStatus' not in data.columns:
             return data
-        
-        return data[data['status'].str.lower() == self.status.lower()].copy()
+
+        return data[data['RemediationStatus'].str.lower() == self.status.lower()].copy()
 
 
 class StateSpecification(ISpecification):
@@ -89,10 +89,10 @@ class StateSpecification(ISpecification):
     
     def is_satisfied_by(self, data: pd.DataFrame) -> pd.DataFrame:
         """Return sites in specified state."""
-        if data.empty or 'state' not in data.columns:
+        if data.empty or 'State' not in data.columns:
             return data
         
-        return data[data['state'].str.upper() == self.state].copy()
+        return data[data['State'].str.upper() == self.state].copy()
 
 
 class ContaminantSpecification(ISpecification):
@@ -170,11 +170,11 @@ class UnremediatedSpecification(ISpecification):
     
     def is_satisfied_by(self, data: pd.DataFrame) -> pd.DataFrame:
         """Return sites that are not completed."""
-        if data.empty or 'status' not in data.columns:
+        if data.empty or 'RemediationStatus' not in data.columns:
             return data
         
         # Consider both 'In Progress' and 'Not Started' as unremediated
-        mask = data['status'].str.lower() != 'completed'
+        mask = data['RemediationStatus'].str.lower() != 'Completed'
         return data[mask].copy()
 
 
@@ -196,7 +196,7 @@ class PolicyGeospatialSpecification(ISpecification):
         
         def within_radius(row):
             try:
-                policy_location = (row['latitude'], row['longitude'])
+                policy_location = (row['Latitude'], row['Longitude'])
                 distance = geodesic(self.center, policy_location).miles
                 return distance <= self.radius_miles
             except (KeyError, ValueError, TypeError):
@@ -218,10 +218,10 @@ class PolicyStateSpecification(ISpecification):
     
     def is_satisfied_by(self, data: pd.DataFrame) -> pd.DataFrame:
         """Return policies in specified state."""
-        if data.empty or 'state' not in data.columns:
+        if data.empty or 'State' not in data.columns:
             return data
-        
-        return data[data['state'].str.upper() == self.state].copy()
+
+        return data[data['State'].str.upper() == self.state].copy()
 
 
 class PolicyCitySpecification(ISpecification):
@@ -236,10 +236,10 @@ class PolicyCitySpecification(ISpecification):
     
     def is_satisfied_by(self, data: pd.DataFrame) -> pd.DataFrame:
         """Return policies in specified city."""
-        if data.empty or 'city' not in data.columns:
+        if data.empty or 'City' not in data.columns:
             return data
-        
-        return data[data['city'].str.lower() == self.city].copy()
+
+        return data[data['City'].str.lower() == self.city].copy()
 
 
 class PolicyCoverageTypeSpecification(ISpecification):
@@ -254,10 +254,10 @@ class PolicyCoverageTypeSpecification(ISpecification):
     
     def is_satisfied_by(self, data: pd.DataFrame) -> pd.DataFrame:
         """Return policies with specified coverage type."""
-        if data.empty or 'coverage_type' not in data.columns:
+        if data.empty or 'PolicyType' not in data.columns:
             return data
-        
-        mask = data['coverage_type'].fillna('').str.lower().str.contains(
+
+        mask = data['PolicyType'].fillna('').str.lower().str.contains(
             self.coverage_type, case=False, regex=False
         )
         return data[mask].copy()

@@ -243,7 +243,7 @@ def format_score_report(score_result: Dict) -> str:
         report += "**Sites Found:**\n"
         sites = score_result['nearby_sites']
         for idx, site in sites.head(5).iterrows():
-            report += f"- {site.get('site_name', 'Unknown')} ({site.get('city', 'Unknown')}, {site.get('state', 'N/A')})\n"
+            report += f"- {site.get('SiteName', 'Unknown')} ({site.get('City', 'Unknown')}, {site.get('State', 'N/A')})\n"
         
         if score_result['site_count'] > 5:
             report += f"\n_...and {score_result['site_count'] - 5} more sites_\n"
