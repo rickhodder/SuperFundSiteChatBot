@@ -183,6 +183,10 @@ def process_chat_query(user_input: str):
         add_debug_log("Command type: Show all policies")
         handle_show_all_policies()
     
+    elif any(cmd in user_lower for cmd in ['show all sites', 'list all sites', 'all sites', 'show sites']):
+        add_debug_log("Command type: Show all sites")
+        handle_show_all_sites()
+    
     elif 'policies in' in user_lower or 'show policies in' in user_lower:
         # Extract state (look for 2-letter state codes or state names)
         state = extract_state_from_query(user_input)
@@ -431,6 +435,37 @@ def handle_batch_score_policies():
         st.rerun()
 
 
+def handle_show_all_sites():
+    """Show all SuperFund sites."""
+    with st.spinner("Loading all SuperFund sites..."):
+        sites = backend.get_all_sites()
+        
+        if sites.empty:
+            add_debug_log("Result: No sites found in database")
+            response = "❌ No SuperFund sites found in database."
+        else:
+            add_debug_log(f"Result: Found {len(sites)} sites, maximizing data grid")
+            response = f"🏭 **Found {len(sites)} SuperFund sites**\n\nDisplaying in data grid below."
+            
+            # Store as score result format for compatibility with existing render
+            st.session_state.current_score_result = {
+                'nearby_sites': sites,
+                'site_count': len(sites),
+                'location': (0, 0),  # Dummy location
+                'radius_miles': 0,
+                'score': None,
+                'risk_level': None
+            }
+            st.session_state.data_display_type = 'sites'
+            section_manager.maximize("data_grid")
+        
+        st.session_state.chat_history.append({
+            "role": "assistant",
+            "content": response
+        })
+        st.rerun()
+
+
 def handle_show_policy(policy_number: str):
     """Show details for a specific policy."""
     with st.spinner(f"Finding policy {policy_number}..."):
@@ -634,6 +669,14 @@ def render_chat_section():
                     st.rerun()
                 if st.button("🗺️ Policies in CA", key="cmd_state_ca", use_container_width=True):
                     st.session_state.pending_command = "policies in CA"
+                    st.rerun()
+            
+            st.markdown("---")
+            st.markdown("**🏭 SuperFund Site Queries:**")
+            col_site1, col_site2 = st.columns(2)
+            with col_site1:
+                if st.button("🏭 Show all sites", key="cmd_all_sites", use_container_width=True):
+                    st.session_state.pending_command = "show all sites"
                     st.rerun()
 
 
