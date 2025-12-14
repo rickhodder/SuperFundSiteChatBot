@@ -16,9 +16,17 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Custom CSS for 60/40 layout
+# Custom CSS for 60/40 layout and fixed viewport
 st.markdown("""
 <style>
+    /* Prevent body scrolling - fit everything in viewport */
+    .main .block-container {
+        max-height: 100vh;
+        overflow: hidden;
+        padding-top: 2rem;
+        padding-bottom: 1rem;
+    }
+    
     /* 60/40 column split */
     [data-testid="column"]:nth-child(1) {
         width: 60% !important;
@@ -542,8 +550,9 @@ def render_chat_section():
         section_manager.render_section_controls("chat")
     
     if not section_manager.is_collapsed("chat") and not section_manager.is_hidden("chat"):
-        # Chat history display
-        chat_container = st.container(height=400)
+        # Chat history display - adjust height based on maximized state
+        chat_height = 700 if section_manager.is_maximized("chat") else 500
+        chat_container = st.container(height=chat_height)
         with chat_container:
             for message in st.session_state.chat_history:
                 with st.chat_message(message["role"]):
@@ -640,43 +649,18 @@ def render_data_section():
         section_manager.render_section_controls("data_grid")
     
     if not section_manager.is_collapsed("data_grid") and not section_manager.is_hidden("data_grid"):
-        # Check what type of data to display
+        # Check what type of data to display first (outside container)
         if st.session_state.data_display_type == 'policies' and st.session_state.current_policy_data is not None:
-            # Display policy data
             policy_data = st.session_state.current_policy_data
             
             if not policy_data.empty:
-                st.markdown("**Policy Data:**")
-                
-                # Select columns to display
-                display_cols = ['policy_id', 'address', 'city', 'state']
-                
-                # Add score columns if they exist
-                if 'score' in policy_data.columns:
-                    display_cols.extend(['score', 'risk_level', 'site_count'])
-                
-                # Add property value if exists
-                if 'property_value' in policy_data.columns:
-                    display_cols.append('property_value')
-                
-                # Filter to only existing columns
-                display_cols = [col for col in display_cols if col in policy_data.columns]
-                
-                # Display dataframe
-                st.dataframe(
-                    policy_data[display_cols],
-                    use_container_width=True,
-                    hide_index=True
-                )
-                
-                # Action buttons
-                st.markdown("**Actions:**")
+                # Action buttons at top (outside scrollable area)
                 col1, col2, col3 = st.columns(3)
                 
                 with col1:
                     csv = policy_data.to_csv(index=False)
                     st.download_button(
-                        label="📥 Download CSV",
+                        label="📥 CSV",
                         data=csv,
                         file_name="policies.csv",
                         mime="text/csv",
@@ -685,7 +669,7 @@ def render_data_section():
                 
                 with col2:
                     if 'score' not in policy_data.columns:
-                        if st.button("🎯 Score These Policies", key="score_policies"):
+                        if st.button("🎯 Score All", key="score_policies"):
                             st.session_state.chat_history.append({
                                 "role": "user",
                                 "content": "score all policies"
@@ -693,9 +677,36 @@ def render_data_section():
                             handle_batch_score_policies()
                 
                 with col3:
-                    if st.button("🔄 Show SuperFund Sites", key="switch_to_sites"):
+                    if st.button("🔄 Sites", key="switch_to_sites"):
                         st.session_state.data_display_type = 'sites'
                         st.rerun()
+                
+                # Scrollable data container
+                data_height = 700 if section_manager.is_maximized("data_grid") else 270
+                data_container = st.container(height=data_height)
+                
+                with data_container:
+                    # Select columns to display
+                    display_cols = ['policy_id', 'address', 'city', 'state']
+                    
+                    # Add score columns if they exist
+                    if 'score' in policy_data.columns:
+                        display_cols.extend(['score', 'risk_level', 'site_count'])
+                    
+                    # Add property value if exists
+                    if 'property_value' in policy_data.columns:
+                        display_cols.append('property_value')
+                    
+                    # Filter to only existing columns
+                    display_cols = [col for col in display_cols if col in policy_data.columns]
+                    
+                    # Display dataframe
+                    st.dataframe(
+                        policy_data[display_cols],
+                        use_container_width=True,
+                        hide_index=True,
+                        height=data_height - 20
+                    )
             else:
                 st.info("✅ No policies to display")
         
@@ -704,23 +715,13 @@ def render_data_section():
             nearby_sites = st.session_state.current_score_result['nearby_sites']
             
             if not nearby_sites.empty:
-                st.markdown("**Nearby SuperFund Sites:**")
-                
-                # Display in dataframe
-                st.dataframe(
-                    nearby_sites[['site_name', 'city', 'state', 'status']],
-                    use_container_width=True,
-                    hide_index=True
-                )
-                
-                # Action buttons
-                st.markdown("**Actions:**")
+                # Action buttons at top
                 col1, col2 = st.columns(2)
                 
                 with col1:
                     csv = nearby_sites.to_csv(index=False)
                     st.download_button(
-                        label="📥 Download CSV",
+                        label="📥 CSV",
                         data=csv,
                         file_name="superfund_sites.csv",
                         mime="text/csv",
@@ -728,9 +729,21 @@ def render_data_section():
                     )
                 
                 with col2:
-                    if st.button("🗺️ Show on Map", key="show_map"):
+                    if st.button("🗺️ Map", key="show_map"):
                         section_manager.activate_section("image")
                         st.rerun()
+                
+                # Scrollable data container
+                data_height = 700 if section_manager.is_maximized("data_grid") else 270
+                data_container = st.container(height=data_height)
+                
+                with data_container:
+                    st.dataframe(
+                        nearby_sites[['site_name', 'city', 'state', 'status']],
+                        use_container_width=True,
+                        hide_index=True,
+                        height=data_height - 20
+                    )
             else:
                 st.info("✅ No nearby unremediated SuperFund sites found!")
         else:
@@ -749,16 +762,21 @@ def render_image_section():
         section_manager.render_section_controls("image")
     
     if not section_manager.is_collapsed("image") and not section_manager.is_hidden("image"):
-        if st.session_state.current_score_result:
-            st.info("🚧 Map visualization coming in Phase 2")
-            
-            # Display location info
-            location = st.session_state.current_score_result['location']
-            st.write(f"**Center Location:** {location[0]:.4f}, {location[1]:.4f}")
-            st.write(f"**Radius:** {st.session_state.current_score_result['radius_miles']} miles")
-            st.write(f"**Sites:** {st.session_state.current_score_result['site_count']}")
-        else:
-            st.info("Map will display after running a safety check...")
+        # Adjust container height based on maximized state
+        map_height = 700 if section_manager.is_maximized("image") else 250
+        map_container = st.container(height=map_height)
+        
+        with map_container:
+            if st.session_state.current_score_result:
+                st.info("🚧 Map visualization coming in Phase 2")
+                
+                # Display location info
+                location = st.session_state.current_score_result['location']
+                st.write(f"**Center Location:** {location[0]:.4f}, {location[1]:.4f}")
+                st.write(f"**Radius:** {st.session_state.current_score_result['radius_miles']} miles")
+                st.write(f"**Sites:** {st.session_state.current_score_result['site_count']}")
+            else:
+                st.info("Map will display after running a safety check...")
 
 
 def render_debug_section():
@@ -774,8 +792,10 @@ def render_debug_section():
     
     if not section_manager.is_collapsed("debug") and not section_manager.is_hidden("debug"):
         # Show debug log in a scrollable container
+        # Adjust container height based on maximized state
+        debug_height = 700 if section_manager.is_maximized("debug") else 250
         st.markdown("**Command Log:**")
-        log_container = st.container(height=300)
+        log_container = st.container(height=debug_height)
         with log_container:
             if st.session_state.debug_log:
                 # Show most recent messages first
