@@ -162,6 +162,9 @@ if 'pending_command' not in st.session_state:
 if 'debug_log' not in st.session_state:
     st.session_state.debug_log = []
 
+if 'map_activated' not in st.session_state:
+    st.session_state.map_activated = False  # Track if user has explicitly opened the map
+
 
 def add_debug_log(message: str):
     """Add a message to the debug log with timestamp."""
@@ -680,8 +683,8 @@ def render_chat_section():
                 if st.button("🔍 Policy UE56256340", key="cmd_specific", use_container_width=True):
                     st.session_state.pending_command = "policy UE56256340"
                     st.rerun()
-                if st.button("🗺️ Policies in CA", key="cmd_state_ca", use_container_width=True):
-                    st.session_state.pending_command = "policies in CA"
+                if st.button("🗺️ Policies in VT", key="cmd_state_vt", use_container_width=True):
+                    st.session_state.pending_command = "policies in VT"
                     st.rerun()
             
             st.markdown("---")
@@ -791,6 +794,7 @@ def render_data_section():
                 
                 with col2:
                     if st.button("🗺️ Map", key="show_map"):
+                        st.session_state.map_activated = True
                         section_manager.activate_section("image")
                         section_manager.maximize("image")
                         st.rerun()
@@ -825,7 +829,8 @@ def render_image_section():
     with col_controls:
         section_manager.render_section_controls("image")
     
-    if not section_manager.is_collapsed("image") and not section_manager.is_hidden("image"):
+    # Only show content if section is not collapsed AND not hidden AND was explicitly activated by user
+    if not section_manager.is_collapsed("image") and not section_manager.is_hidden("image") and st.session_state.map_activated:
         # Adjust container height based on maximized state - increased heights for better viewing
         map_height = 700 if section_manager.is_maximized("image") else 400
         
@@ -843,6 +848,12 @@ def render_image_section():
                 st.warning("⚠️ Demo map not found. Run `python generate_fake_map.py` to create it.")
         else:
             st.info("Map will display after running a safety check...")
+    else:
+        # Show a hint when not activated
+        if st.session_state.current_score_result:
+            st.caption("_Click 🗺️ Map button in Data Grid to view map_")
+        else:
+            st.caption("_Map will be available after running a safety check_")
 
 
 def render_debug_section():
