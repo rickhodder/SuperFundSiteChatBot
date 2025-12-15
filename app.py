@@ -153,6 +153,9 @@ if 'current_policy_data' not in st.session_state:
 if 'data_display_type' not in st.session_state:
     st.session_state.data_display_type = 'sites'  # 'sites' or 'policies'
 
+if 'data_description' not in st.session_state:
+    st.session_state.data_description = None  # Description of what data is shown
+
 if 'pending_command' not in st.session_state:
     st.session_state.pending_command = None
 
@@ -279,6 +282,7 @@ def handle_show_all_policies():
             response = f"📋 **Found {len(policies)} policies**\n\nDisplaying in data grid."
             st.session_state.current_policy_data = policies
             st.session_state.data_display_type = 'policies'
+            st.session_state.data_description = f"Showing all {len(policies)} policies in the database"
             section_manager.maximize("data_grid")
         
         st.session_state.chat_history.append({
@@ -304,6 +308,7 @@ def handle_policies_by_state(state: str):
             response = f"📋 **Found {len(policies)} policies in {state}**\n\nDisplaying in data grid."
             st.session_state.current_policy_data = policies
             st.session_state.data_display_type = 'policies'
+            st.session_state.data_description = f"Showing {len(policies)} policies in {state}"
             section_manager.maximize("data_grid")
         
         st.session_state.chat_history.append({
@@ -333,6 +338,7 @@ def handle_high_risk_policies():
                 response = f"⚠️ **Found {len(high_risk)} high-risk policies**\n\nDisplaying in data grid."
                 st.session_state.current_policy_data = high_risk
                 st.session_state.data_display_type = 'policies'
+                st.session_state.data_description = f"Showing {len(high_risk)} high-risk policies"
                 section_manager.maximize("data_grid")
         
         st.session_state.chat_history.append({
@@ -358,6 +364,7 @@ def handle_high_value_policies():
             response = f"💰 **Found {len(policies)} high-value policies ($1M+)**\n\nDisplaying in data grid."
             st.session_state.current_policy_data = policies
             st.session_state.data_display_type = 'policies'
+            st.session_state.data_description = f"Showing {len(policies)} high-value policies (>$1M)"
             section_manager.maximize("data_grid")
         
         st.session_state.chat_history.append({
@@ -376,6 +383,7 @@ def handle_high_value_policies():
             response = f"💰 **Found {len(policies)} high-value policies ($1M+)**\n\nDisplaying in data grid."
             st.session_state.current_policy_data = policies
             st.session_state.data_display_type = 'policies'
+            st.session_state.data_description = f"Showing {len(policies)} high-value policies (>$1M)"
             section_manager.maximize("data_grid")
         
         st.session_state.chat_history.append({
@@ -399,6 +407,7 @@ def handle_policies_by_coverage(coverage_type: str):
             response = f"📋 **Found {len(policies)} {coverage_type} policies**\n\nDisplaying in data grid."
             st.session_state.current_policy_data = policies
             st.session_state.data_display_type = 'policies'
+            st.session_state.data_description = f"Showing {len(policies)} {coverage_type} policies"
             section_manager.maximize("data_grid")
         
         st.session_state.chat_history.append({
@@ -426,6 +435,7 @@ def handle_batch_score_policies():
             
             st.session_state.current_policy_data = results
             st.session_state.data_display_type = 'policies'
+            st.session_state.data_description = f"Showing safety scores for all {len(results)} policies"
             section_manager.maximize("data_grid")
         
         st.session_state.chat_history.append({
@@ -457,6 +467,7 @@ def handle_show_all_sites():
                 'risk_level': None
             }
             st.session_state.data_display_type = 'sites'
+            st.session_state.data_description = f"Showing all {len(sites)} SuperFund sites in the database"
             section_manager.maximize("data_grid")
         
         st.session_state.chat_history.append({
@@ -489,6 +500,7 @@ def handle_show_policy(policy_number: str):
             
             st.session_state.current_policy_data = policy
             st.session_state.data_display_type = 'policies'
+            st.session_state.data_description = f"Showing policy {p['PolicyNumber']}"
             section_manager.maximize("data_grid")
         
         st.session_state.chat_history.append({
@@ -505,6 +517,7 @@ def handle_address_query(address: str):
             score_result = scorer.score_policy(address=address)
             st.session_state.current_score_result = score_result
             st.session_state.data_display_type = 'sites'
+            st.session_state.data_description = f"Showing {score_result['site_count']} SuperFund sites within {score_result['radius_miles']} miles of {address}"
             
             # Format response
             response = format_score_report(score_result)
@@ -691,6 +704,10 @@ def render_data_section():
     with col_controls:
         section_manager.render_section_controls("data_grid")
     
+    # Display data description if available
+    if st.session_state.data_description and not section_manager.is_collapsed("data_grid") and not section_manager.is_hidden("data_grid"):
+        st.markdown(f"*{st.session_state.data_description}*")
+    
     if not section_manager.is_collapsed("data_grid") and not section_manager.is_hidden("data_grid"):
         # Check what type of data to display first (outside container)
         if st.session_state.data_display_type == 'policies' and st.session_state.current_policy_data is not None:
@@ -775,6 +792,7 @@ def render_data_section():
                 with col2:
                     if st.button("🗺️ Map", key="show_map"):
                         section_manager.activate_section("image")
+                        section_manager.maximize("image")
                         st.rerun()
                 
                 # Scrollable data container
@@ -808,21 +826,23 @@ def render_image_section():
         section_manager.render_section_controls("image")
     
     if not section_manager.is_collapsed("image") and not section_manager.is_hidden("image"):
-        # Adjust container height based on maximized state
-        map_height = 700 if section_manager.is_maximized("image") else 250
-        map_container = st.container(height=map_height)
+        # Adjust container height based on maximized state - increased heights for better viewing
+        map_height = 700 if section_manager.is_maximized("image") else 400
         
-        with map_container:
-            if st.session_state.current_score_result:
-                st.info("🚧 Map visualization coming in Phase 2")
+        if st.session_state.current_score_result:
+            # Display fake demo map
+            import os
+            map_path = os.path.join("data", "demo_map.png")
+            if os.path.exists(map_path):
+                st.image(map_path, caption="Demo Map - Policy location (green) and nearby SuperFund sites (red)", use_container_width=True)
                 
-                # Display location info
+                # Display location info below map
                 location = st.session_state.current_score_result['location']
-                st.write(f"**Center Location:** {location[0]:.4f}, {location[1]:.4f}")
-                st.write(f"**Radius:** {st.session_state.current_score_result['radius_miles']} miles")
-                st.write(f"**Sites:** {st.session_state.current_score_result['site_count']}")
+                st.caption(f"📍 Center: {location[0]:.4f}, {location[1]:.4f} | 📏 Radius: {st.session_state.current_score_result['radius_miles']} mi | 🏭 Sites: {st.session_state.current_score_result['site_count']}")
             else:
-                st.info("Map will display after running a safety check...")
+                st.warning("⚠️ Demo map not found. Run `python generate_fake_map.py` to create it.")
+        else:
+            st.info("Map will display after running a safety check...")
 
 
 def render_debug_section():
