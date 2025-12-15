@@ -175,22 +175,22 @@ class SafetyScorer:
         for idx, policy in policies.iterrows():
             try:
                 # Use lat/lon from policy if available, otherwise geocode
-                if 'latitude' in policy and 'longitude' in policy and \
-                   pd.notna(policy['latitude']) and pd.notna(policy['longitude']):
+                if 'Latitude' in policy and 'Longitude' in policy and \
+                   pd.notna(policy['Latitude']) and pd.notna(policy['Longitude']):
                     result = self.score_policy(
-                        latitude=policy['latitude'],
-                        longitude=policy['longitude']
+                        latitude=policy['Latitude'],
+                        longitude=policy['Longitude']
                     )
                 else:
                     # Geocode the address
-                    address = f"{policy.get('address', '')}, {policy.get('city', '')}, {policy.get('state', '')}"
+                    address = f"{policy.get('Address', '')}, {policy.get('City', '')}, {policy.get('State', '')}"
                     result = self.score_policy(address=address)
                 
                 results.append({
-                    'policy_id': policy.get('policy_id', f'P-{idx}'),
-                    'address': policy.get('address', 'Unknown'),
-                    'city': policy.get('city', 'Unknown'),
-                    'state': policy.get('state', 'N/A'),
+                    'policy_id': policy.get('Id', f'P-{idx}'),
+                    'address': policy.get('Address', 'Unknown'),
+                    'city': policy.get('City', 'Unknown'),
+                    'state': policy.get('State', 'N/A'),
                     'latitude': result['location'][0],
                     'longitude': result['location'][1],
                     'score': result['score'],
@@ -202,17 +202,17 @@ class SafetyScorer:
             except Exception as e:
                 print(f"⚠ Error scoring policy {policy.get('policy_id', idx)}: {str(e)}")
                 results.append({
-                    'policy_id': policy.get('policy_id', f'P-{idx}'),
-                    'address': policy.get('address', 'Unknown'),
-                    'city': policy.get('city', 'Unknown'),
-                    'state': policy.get('state', 'N/A'),
+                    'policy_id': policy.get('Id', f'P-{idx}'),
+                    'address': policy.get('Address', 'Unknown'),
+                    'city': policy.get('City', 'Unknown'),
+                    'state': policy.get('State', 'N/A'),
                     'latitude': None,
                     'longitude': None,
                     'score': None,
                     'risk_level': 'ERROR',
                     'site_count': None,
                     'property_value': policy.get('property_value', None),
-                    'coverage_type': policy.get('coverage_type', 'Unknown'),
+                    'coverage_type': policy.get('PolicyType', 'Unknown'),
                     'error': str(e)
                 })
         

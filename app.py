@@ -276,7 +276,7 @@ def handle_show_all_policies():
             response = "❌ No policies found in database."
         else:
             add_debug_log(f"Result: Found {len(policies)} policies, maximizing data grid")
-            response = f"📋 **Found {len(policies)} policies**\n\nDisplaying in data grid below."
+            response = f"📋 **Found {len(policies)} policies**\n\nDisplaying in data grid."
             st.session_state.current_policy_data = policies
             st.session_state.data_display_type = 'policies'
             section_manager.maximize("data_grid")
@@ -301,7 +301,7 @@ def handle_policies_by_state(state: str):
             response = f"❌ No policies found in {state}."
         else:
             add_debug_log(f"Result: Found {len(policies)} policies in {state}, maximizing data grid")
-            response = f"📋 **Found {len(policies)} policies in {state}**\n\nDisplaying in data grid below."
+            response = f"📋 **Found {len(policies)} policies in {state}**\n\nDisplaying in data grid."
             st.session_state.current_policy_data = policies
             st.session_state.data_display_type = 'policies'
             section_manager.maximize("data_grid")
@@ -330,7 +330,7 @@ def handle_high_risk_policies():
                 response = "✅ No high-risk policies found!"
             else:
                 add_debug_log(f"Result: Found {len(high_risk)} high-risk policies, maximizing data grid")
-                response = f"⚠️ **Found {len(high_risk)} high-risk policies**\n\nDisplaying in data grid below."
+                response = f"⚠️ **Found {len(high_risk)} high-risk policies**\n\nDisplaying in data grid."
                 st.session_state.current_policy_data = high_risk
                 st.session_state.data_display_type = 'policies'
                 section_manager.maximize("data_grid")
@@ -355,7 +355,7 @@ def handle_high_value_policies():
             response = "❌ No high-value policies ($1M+) found."
         else:
             add_debug_log(f"Result: Found {len(policies)} high-value policies ($1M+), maximizing data grid")
-            response = f"💰 **Found {len(policies)} high-value policies ($1M+)**\n\nDisplaying in data grid below."
+            response = f"💰 **Found {len(policies)} high-value policies ($1M+)**\n\nDisplaying in data grid."
             st.session_state.current_policy_data = policies
             st.session_state.data_display_type = 'policies'
             section_manager.maximize("data_grid")
@@ -373,7 +373,7 @@ def handle_high_value_policies():
         if policies.empty:
             response = "❌ No high-value policies ($1M+) found."
         else:
-            response = f"💰 **Found {len(policies)} high-value policies ($1M+)**\n\nDisplaying in data grid below."
+            response = f"💰 **Found {len(policies)} high-value policies ($1M+)**\n\nDisplaying in data grid."
             st.session_state.current_policy_data = policies
             st.session_state.data_display_type = 'policies'
             section_manager.maximize("data_grid")
@@ -396,7 +396,7 @@ def handle_policies_by_coverage(coverage_type: str):
         if policies.empty:
             response = f"❌ No {coverage_type} policies found."
         else:
-            response = f"📋 **Found {len(policies)} {coverage_type} policies**\n\nDisplaying in data grid below."
+            response = f"📋 **Found {len(policies)} {coverage_type} policies**\n\nDisplaying in data grid."
             st.session_state.current_policy_data = policies
             st.session_state.data_display_type = 'policies'
             section_manager.maximize("data_grid")
@@ -422,7 +422,7 @@ def handle_batch_score_policies():
             response += f"- MEDIUM: {len(results[results['risk_level'] == 'MEDIUM'])}\n"
             response += f"- HIGH: {len(results[results['risk_level'] == 'HIGH'])}\n"
             response += f"- CRITICAL: {len(results[results['risk_level'] == 'CRITICAL'])}\n\n"
-            response += "Displaying results in data grid below."
+            response += "Displaying results in data grid."
             
             st.session_state.current_policy_data = results
             st.session_state.data_display_type = 'policies'
@@ -445,7 +445,7 @@ def handle_show_all_sites():
             response = "❌ No SuperFund sites found in database."
         else:
             add_debug_log(f"Result: Found {len(sites)} sites, maximizing data grid")
-            response = f"🏭 **Found {len(sites)} SuperFund sites**\n\nDisplaying in data grid below."
+            response = f"🏭 **Found {len(sites)} SuperFund sites**\n\nDisplaying in data grid."
             
             # Store as score result format for compatibility with existing render
             st.session_state.current_score_result = {

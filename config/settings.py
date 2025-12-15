@@ -23,7 +23,7 @@ LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "openai")
 MODEL_NAME: str = os.getenv("MODEL_NAME", "gpt-3.5-turbo")
 
 # Application Settings
-APP_TITLE: str = os.getenv("APP_TITLE", "SuperFund Site Safety Checker")
+APP_TITLE: str = os.getenv("APP_TITLE", "SuperFund Site Proximity Detector")
 DEBUG_MODE: bool = os.getenv("DEBUG_MODE", "False").lower() == "true"
 
 # Data Settings
