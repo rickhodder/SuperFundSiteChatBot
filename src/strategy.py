@@ -51,6 +51,22 @@ class IDataBackend(ABC):
     def get_all_policies(self) -> pd.DataFrame:
         """Retrieve all policies."""
         pass
+    
+    @abstractmethod
+    def get_coordinates_by_address(self, address: str) -> tuple:
+        """
+        Look up coordinates for an address from the database.
+        
+        Args:
+            address: Full address string to search for
+        
+        Returns:
+            Tuple of (latitude, longitude)
+        
+        Raises:
+            ValueError: If address not found
+        """
+        pass
 
 
 class CSVBackend(IDataBackend):
@@ -73,7 +89,11 @@ class CSVBackend(IDataBackend):
         """Load SuperFund site data from CSV."""
         if self._superfund_data is None:
             try:
-                self._superfund_data = pd.read_csv(self.superfund_csv)
+                # Read CSV with PostalCode as string to preserve leading zeros
+                self._superfund_data = pd.read_csv(
+                    self.superfund_csv,
+                    dtype={'PostalCode': str}
+                )
                 print(f"✓ Loaded {len(self._superfund_data)} SuperFund sites from CSV")
             except FileNotFoundError:
                 print(f"⚠ CSV file not found: {self.superfund_csv}")
@@ -87,7 +107,11 @@ class CSVBackend(IDataBackend):
         """Load insurance policy data from CSV."""
         if self._policy_data is None:
             try:
-                self._policy_data = pd.read_csv(self.policy_csv)
+                # Read CSV with PostalCode as string to preserve leading zeros
+                self._policy_data = pd.read_csv(
+                    self.policy_csv,
+                    dtype={'PostalCode': str}
+                )
                 print(f"✓ Loaded {len(self._policy_data)} insurance policies from CSV")
             except FileNotFoundError:
                 print(f"⚠ Policy CSV file not found: {self.policy_csv}")
@@ -118,6 +142,60 @@ class CSVBackend(IDataBackend):
     def get_all_policies(self) -> pd.DataFrame:
         """Return all policies."""
         return self.load_policy_data()
+    
+    def get_coordinates_by_address(self, address: str) -> tuple:
+        """
+        Look up coordinates for an address from policies and superfund sites CSVs.
+        
+        Args:
+            address: Full address string to search for
+        
+        Returns:
+            Tuple of (latitude, longitude)
+        
+        Raises:
+            ValueError: If address not found in either database
+        """
+        # Normalize the search address
+        address_lower = address.lower().strip()
+        
+        # Load data
+        policies_df = self.load_policy_data()
+        sites_df = self.load_superfund_data()
+        
+        # Search in policies dataframe first
+        for idx, policy in policies_df.iterrows():
+            # Build full address from CSV columns
+            policy_address = f"{policy.get('Address', '')}, {policy.get('City', '')}, {policy.get('State', '')} {policy.get('PostalCode', '')}".strip()
+            
+            if address_lower in policy_address.lower():
+                lat = policy.get('Latitude')
+                lon = policy.get('Longitude')
+                
+                if pd.notna(lat) and pd.notna(lon):
+                    print(f"[DEBUG] Found address in policies: {policy_address} -> ({lat}, {lon})")
+                    return (float(lat), float(lon))
+        
+        # Search in superfund sites dataframe
+        for idx, site in sites_df.iterrows():
+            # Build full address from CSV columns
+            site_address = f"{site.get('Address', '')}, {site.get('City', '')}, {site.get('State', '')} {site.get('PostalCode', '')}".strip()
+            
+            if address_lower in site_address.lower():
+                lat = site.get('Latitude')
+                lon = site.get('Longitude')
+                
+                if pd.notna(lat) and pd.notna(lon):
+                    print(f"[DEBUG] Found address in superfund sites: {site_address} -> ({lat}, {lon})")
+                    return (float(lat), float(lon))
+        
+        # If not found in either, provide helpful error
+        raise ValueError(
+            f"Address not found in demo database: '{address}'\n"
+            f"Please use one of the addresses from the command buttons or available in:\n"
+            f"- policies.csv ({len(policies_df)} addresses)\n"
+            f"- superfund_sites.csv ({len(sites_df)} addresses)"
+        )
 
 
 class VectorStoreBackend(IDataBackend):
@@ -213,6 +291,60 @@ class VectorStoreBackend(IDataBackend):
     def get_all_policies(self) -> pd.DataFrame:
         """Return all policies from vector store."""
         return self.load_policy_data()
+    
+    def get_coordinates_by_address(self, address: str) -> tuple:
+        """
+        Look up coordinates for an address from policies and superfund sites vector stores.
+        
+        Args:
+            address: Full address string to search for
+        
+        Returns:
+            Tuple of (latitude, longitude)
+        
+        Raises:
+            ValueError: If address not found in either database
+        """
+        # Normalize the search address
+        address_lower = address.lower().strip()
+        
+        # Load data
+        policies_df = self.load_policy_data()
+        sites_df = self.load_superfund_data()
+        
+        # Search in policies dataframe first
+        for idx, policy in policies_df.iterrows():
+            # Build full address from metadata columns
+            policy_address = f"{policy.get('Address', '')}, {policy.get('City', '')}, {policy.get('State', '')} {policy.get('PostalCode', '')}".strip()
+            
+            if address_lower in policy_address.lower():
+                lat = policy.get('Latitude')
+                lon = policy.get('Longitude')
+                
+                if pd.notna(lat) and pd.notna(lon):
+                    print(f"[DEBUG] Found address in policies: {policy_address} -> ({lat}, {lon})")
+                    return (float(lat), float(lon))
+        
+        # Search in superfund sites dataframe
+        for idx, site in sites_df.iterrows():
+            # Build full address from metadata columns
+            site_address = f"{site.get('Address', '')}, {site.get('City', '')}, {site.get('State', '')} {site.get('PostalCode', '')}".strip()
+            
+            if address_lower in site_address.lower():
+                lat = site.get('Latitude')
+                lon = site.get('Longitude')
+                
+                if pd.notna(lat) and pd.notna(lon):
+                    print(f"[DEBUG] Found address in superfund sites: {site_address} -> ({lat}, {lon})")
+                    return (float(lat), float(lon))
+        
+        # If not found in either, provide helpful error
+        raise ValueError(
+            f"Address not found in demo database: '{address}'\n"
+            f"Please use one of the addresses from the command buttons or available in:\n"
+            f"- policies vector store ({len(policies_df)} addresses)\n"
+            f"- superfund_sites vector store ({len(sites_df)} addresses)"
+        )
     
     def semantic_search_superfund(self, query_text: str, n_results: int = 10) -> pd.DataFrame:
         """Perform semantic search on SuperFund site descriptions."""

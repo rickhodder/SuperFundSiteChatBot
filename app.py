@@ -627,11 +627,11 @@ def render_chat_section():
             st.markdown("**🏢 Address Safety Queries:**")
             col_addr1, col_addr2 = st.columns(2)
             with col_addr1:
-                if st.button("📍 5733 Main Street, Portland, ME 04101 (safe address, no sites)", key="cmd_address1", use_container_width=True):
-                    st.session_state.pending_command = "5733 Main Street, Portland, ME 04101"
+                if st.button("📍 796 Cedar Lane, Chicago, IL 60601 (safe address, no sites)", key="cmd_address1", use_container_width=True):
+                    st.session_state.pending_command = "796 Cedar Lane, Chicago, IL 60601"
                     st.rerun()
-                if st.button("📍 100 Main Street, Tucson, AZ 85701 (has at least 1 site)", key="cmd_address2", use_container_width=True):
-                    st.session_state.pending_command = "100 Main Street, Tucson, AZ 85701"
+                if st.button("📍 9509 Jefferson Road, Tucson, AZ 85701 (has at least 1 site)", key="cmd_address2", use_container_width=True):
+                    st.session_state.pending_command = "9509 Jefferson Road, Tucson, AZ 85701"
                     st.rerun()
             with col_addr2:
                 if st.button("📍 456 Oak Ave, Los Angeles, CA", key="cmd_address3", use_container_width=True):

@@ -4,8 +4,9 @@ Algorithm: Start at 100%, deduct 25% per unremediated site within 50 miles, mini
 """
 from typing import Tuple, Dict, List
 import pandas as pd
-from geopy.geocoders import Nominatim
-from geopy.exc import GeocoderTimedOut, GeocoderServiceError
+# NOTE: Nominatim import commented out for sandbox/offline mode
+# from geopy.geocoders import Nominatim
+# from geopy.exc import GeocoderTimedOut, GeocoderServiceError
 import config.settings as settings
 from src.specifications import unremediated_within_radius
 from src.strategy import get_backend
@@ -23,12 +24,15 @@ class SafetyScorer:
         self.minimum_score = settings.MINIMUM_SCORE
         self.risk_levels = settings.RISK_LEVELS
         
-        # Initialize geocoder
-        self.geocoder = Nominatim(user_agent="superfund_safety_checker")
+        # Get backend for address lookup (offline mode - no web API)
+        self.backend = get_backend()
+        
+        # NOTE: Geocoder removed for sandbox/offline mode
+        # self.geocoder = Nominatim(user_agent="superfund_safety_checker")
     
     def geocode_address(self, address: str) -> Tuple[float, float]:
         """
-        Convert address to latitude/longitude coordinates.
+        Look up address coordinates from policies/sites database (no web API).
         
         Args:
             address: Full address string
@@ -37,18 +41,18 @@ class SafetyScorer:
             Tuple of (latitude, longitude)
         
         Raises:
-            ValueError: If address cannot be geocoded
+            ValueError: If address cannot be found in database
         """
+        # Use local database lookup instead of web API (sandbox mode)
         try:
-            location = self.geocoder.geocode(address, timeout=10)
-            
-            if location:
-                return (location.latitude, location.longitude)
-            else:
-                raise ValueError(f"Could not geocode address: {address}")
-        
-        except (GeocoderTimedOut, GeocoderServiceError) as e:
-            raise ValueError(f"Geocoding service error: {str(e)}")
+            return self.backend.get_coordinates_by_address(address)
+        except ValueError as e:
+            # More helpful error message for demo
+            raise ValueError(
+                f"Address not found in demo database. "
+                f"Please use one of the pre-loaded addresses from the command buttons. "
+                f"Original error: {str(e)}"
+            )
     
     def score_policy(
         self,
